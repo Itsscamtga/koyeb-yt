@@ -147,9 +147,16 @@ def get_resource_id(yt_url, quality='360P'):
             'accept': '*/*',
             'accept-language': 'en-US,en;q=0.9',
             'content-type': 'application/x-www-form-urlencoded',
-            'origin': 'http://vidssave.com',
-            'referer': 'http://vidssave.com/',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+            'origin': 'https://vidssave.com',
+            'priority': 'u=1, i',
+            'referer': 'https://vidssave.com/',
+            'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
         }
 
         data = {
@@ -240,9 +247,16 @@ def get_task_id(resource_content):
         'accept': '*/*',
         'accept-language': 'en-US,en;q=0.9',
         'content-type': 'application/x-www-form-urlencoded',
-        'origin': 'http://vidssave.com',
-        'referer': 'http://vidssave.com/',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+        'origin': 'https://vidssave.com',
+        'priority': 'u=1, i',
+        'referer': 'https://vidssave.com/',
+        'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
     }
 
     data = {
@@ -279,9 +293,16 @@ def get_download_link(task_id, max_retries=3):
         'accept': 'text/event-stream',
         'accept-language': 'en-US,en;q=0.9',
         'cache-control': 'no-cache',
-        'origin': 'http://vidssave.com',
-        'referer': 'http://vidssave.com/',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+        'origin': 'https://vidssave.com',
+        'priority': 'u=1, i',
+        'referer': 'https://vidssave.com/',
+        'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
     }
 
     url = f'https://api.vidssave.com/sse/contentsite_api/media/download_query?auth=20250901majwlqo&domain=api-ak.vidssave.com&task_id={task_id}&download_domain=vidssave.com&origin=content_site'
@@ -354,7 +375,8 @@ def download():
                 'download_url': resource_data['url'],
                 'quality': quality,
                 'mode': 'direct',
-                'owner': '@scammer_botxz'
+                'owner': '@scammer_botxz',
+                'note': 'Use the /api/proxy endpoint to download with proper headers'
             })
         
         elif resource_data['mode'] == 'check_download':
@@ -385,7 +407,8 @@ def download():
                 'download_url': download_url,
                 'quality': quality,
                 'mode': 'check_download',
-                'owner': '@scammer_botxz'
+                'owner': '@scammer_botxz',
+                'note': 'Use the /api/proxy endpoint to download with proper headers'
             })
         
         else:
@@ -399,6 +422,72 @@ def download():
         return jsonify({
             'success': False,
             'error': f'Unexpected error: {str(e)}'
+        }), 500
+
+@app.route('/api/proxy', methods=['GET'])
+def proxy_download():
+    """
+    Proxy endpoint to download video with proper headers
+    Query parameters:
+    - url: Direct download URL from /api/download endpoint (required)
+    """
+    try:
+        download_url = request.args.get('url')
+        
+        if not download_url:
+            return jsonify({
+                'success': False,
+                'error': 'Download URL is required'
+            }), 400
+        
+        # Headers that mimic a browser request from vidssave.com
+        headers = {
+            'accept': '*/*',
+            'accept-language': 'en-US,en;q=0.9',
+            'origin': 'https://vidssave.com',
+            'referer': 'https://vidssave.com/',
+            'sec-ch-ua': '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'video',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'cross-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+        }
+        
+        # Stream the video content
+        response = requests.get(download_url, headers=headers, stream=True, timeout=30)
+        response.raise_for_status()
+        
+        # Get content type from the response
+        content_type = response.headers.get('content-type', 'video/mp4')
+        
+        # Stream the response back to client
+        def generate():
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    yield chunk
+        
+        from flask import Response
+        return Response(
+            generate(),
+            content_type=content_type,
+            headers={
+                'Content-Disposition': 'attachment; filename="video.mp4"',
+                'Accept-Ranges': 'bytes'
+            }
+        )
+    
+    except requests.exceptions.HTTPError as e:
+        return jsonify({
+            'success': False,
+            'error': f'Failed to fetch video: {e.response.status_code}'
+        }), e.response.status_code
+    except Exception as e:
+        print(f"Proxy error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Proxy error: {str(e)}'
         }), 500
 
 @app.route('/api/test', methods=['GET'])
@@ -424,9 +513,17 @@ def test():
 def home():
     return jsonify({
         'message': 'YouTube Download API',
-        'usage': '/api/download?url=<youtube_url>&quality=<quality>',
+        'endpoints': {
+            '/api/download': 'Get download URL - ?url=<youtube_url>&quality=<quality>',
+            '/api/proxy': 'Proxy download with headers - ?url=<download_url>',
+            '/api/test': 'Test API functionality'
+        },
         'qualities': ['144P', '240P', '360P', '480P', '720P', '1080P', '1440P', '2160P'],
         'default_quality': '360P',
+        'usage_example': {
+            'step1': '/api/download?url=https://youtube.com/watch?v=VIDEO_ID&quality=720P',
+            'step2': '/api/proxy?url=<download_url_from_step1>'
+        },
         'owner': '@scammer_botxz'
     })
 
